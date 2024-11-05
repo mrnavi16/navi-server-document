@@ -1,0 +1,235 @@
+Navi Documentation for AWS Server
+
+
+1. Amazon EKS (Elastic Kubernetes Service)
+
+Overview: EKS is a managed Kubernetes service by Amazon Web Services (AWS). Kubernetes (K8s) is a widely used open-source system for automating deployment, scaling, and management of containerized applications. EKS offloads the operational burden of Kubernetes management to AWS, handling tasks like patching, updating, and high availability of the Kubernetes control plane.
+Architecture:
+
+oControl Plane: AWS hosts and manages the Kubernetes control plane (API server, etcd, controller manager, and scheduler), which provides high availability and automatically scales across multiple Availability Zones.
+oWorker Nodes: These can be managed or self-managed, running in EC2 instances or AWS Fargate (for serverless execution). Users configure worker nodes, which run container workloads.
+oNetworking: Supports Amazon VPC for network isolation and integration with AWS IAM for role-based access control, making it secure for production workloads.
+
+Use Cases:
+oLarge-scale microservices architectures needing advanced orchestration.
+oComplex applications requiring features like auto-scaling, service discovery, and load balancing.
+oScenarios where you need seamless integration with other AWS services like RDS, S3, and CloudWatch.
+Advantages:
+oFully managed control plane with 99.95% uptime SLA.
+oFlexibility to use both EC2 and Fargate for worker nodes.
+oIntegration with AWS security tools like IAM, VPC, and CloudWatch for monitoring.
+Disadvantages:
+oHigh learning curve due to Kubernetes’ complexity.
+oAdditional costs for managed services and control plane.
+o
+Pricing: Charges a per-cluster hourly fee for the control plane and pay-as-you-go for EC2 and Fargate resources used by worker nodes.
+
+2. Amazon ECS (Elastic Container Service)
+Overview: ECS is Amazon’s native container orchestration service, designed to simplify container management without needing the complexity of Kubernetes. It’s especially well-suited for AWS-native applications and integrates deeply with AWS infrastructure and services.
+Architecture:
+oControl Plane: AWS manages the orchestration of containers, with ECS responsible for scheduling, networking, and managing application lifecycles.
+oFargate Mode: Allows you to run containers without managing infrastructure, as AWS abstracts the server management.
+oEC2 Mode: Containers are hosted on user-managed EC2 instances, offering more control but requiring additional setup.
+Use Cases:
+oSmall to medium-sized applications that need reliable container management without Kubernetes.
+oMicroservices architectures needing less granular control than Kubernetes but still require orchestration features.
+oApplications requiring direct integration with other AWS services like DynamoDB, S3, and CloudWatch.
+Advantages:
+oSimplified container orchestration compared to Kubernetes.
+oDirect support for serverless containers using Fargate.
+oTight integration with AWS services and IAM security.
+Disadvantages:
+oLimited to AWS, reducing flexibility for multi-cloud or hybrid deployments.
+oLess community support and fewer features than Kubernetes.
+Pricing: No additional cost for the control plane. Users pay for the underlying EC2 or Fargate resources used by container instances.
+
+3. Docker
+Overview: Docker is a containerization platform that allows you to package applications with all dependencies in a consistent environment, ensuring they run the same way regardless of where they are deployed.
+Architecture:
+oDocker Engine: Provides a lightweight runtime and tools for building, managing, and deploying containers.
+oContainers: Encapsulate applications and dependencies, providing isolated environments.
+oImages: Blueprint of a container, which includes the app and its dependencies.
+oDocker CLI & Docker Hub: Docker CLI for managing containers and Docker Hub for sharing container images.
+
+Use Cases:
+oDevelopment environments where applications need to be portable across different systems.
+oContinuous Integration and Continuous Deployment (CI/CD) pipelines.
+oConsistent deployment environments across development, staging, and production.
+Advantages:
+oProvides a consistent, isolated environment.
+oSimplifies application deployment across different environments.
+oHuge ecosystem with Docker Hub for image sharing.
+Disadvantages:
+oRequires orchestration tools for managing containers in production environments.
+oDocker alone doesn’t offer high availability or scaling.
+o
+Pricing: Free for individual users and open-source projects, with enterprise plans for Docker Desktop.
+4. Docker Swarm
+Overview: Docker Swarm is Docker’s native clustering and orchestration tool. It allows you to manage a cluster of Docker nodes and orchestrates containers across them, providing a simpler alternative to Kubernetes.
+Architecture:
+oManager Nodes: Coordinate the cluster, handling scheduling and orchestration.
+oWorker Nodes: Execute the containers.
+oOverlay Network: Provides built-in networking between nodes for service discovery and load balancing.
+oTasks: Represent container instances and are distributed among worker nodes.
+Use Cases:
+oSmaller-scale production environments that require basic orchestration but don’t justify the complexity of Kubernetes.
+oDevelopment environments for testing simple multi-container setups.
+Advantages:
+oEasy setup, integrated with Docker CLI.
+oSupports rolling updates, load balancing, and service discovery.
+oLower resource requirements and lighter than Kubernetes.
+Disadvantages:
+oLimited functionality compared to Kubernetes.
+oDocker Swarm doesn’t have as broad community support and lacks advanced orchestration features.
+Pricing: Free as part of Docker.
+5. Docker Compose
+Overview: Docker Compose is a tool used to define and run multi-container Docker applications. It’s designed primarily for local development and testing rather than production use, though it can be adapted for lightweight production use cases.
+
+
+
+
+Architecture:
+oYAML Configuration File: Defines services, networks, and volumes required for a multi-container setup.
+oDocker Engine: Compose commands instruct Docker Engine to build, start, and manage multiple containers.
+oNetworking: Sets up a network for containers defined in a single Compose file to communicate.
+Use Cases:
+oDevelopment environments where multiple containers are required (e.g., app and database).
+oStaging environments for testing interactions between services before deployment.
+Advantages:
+oQuick and simple setup for multi-container applications.
+oSimplifies application setup with a single command (docker-compose up).
+oGreat for local testing of multiple services in isolation.
+Disadvantages:
+oNot intended for production environments (no built-in scaling or clustering).
+oLimited to single-host setups; lacks orchestration capabilities across multiple nodes.
+Pricing: Free, part of Docker.
+
+
+
+
+
+
+
+
+
+
+
+
+Here’s a comprehensive step-by-step guide for setting up a high-performance architecture on AWS to handle 1.5 lakh (150,000) daily users. This will include deploying frontend and backend services in Docker on separate EC2 instances, setting up MySQL, and configuring monitoring with Grafana and CloudWatch. I’ll also provide a high-level architecture diagram overview to help visualize the setup.
+Architecture Overview
+The architecture will include the following components:
+1.VPC Configuration: For network isolation and security.
+2.Subnets: A total of 8 subnets, with 4 for frontend and 4 for backend, to ensure redundancy and distribution.
+3.EC2 Instances:
+1.Frontend EC2: Runs Nginx in Docker as a reverse proxy/load balancer with the frontend application.
+2.Backend EC2: Runs backend services in Docker.
+4.MySQL Database: Hosted on a separate EC2 instance optimized for handling high traffic.
+5.Monitoring: Integrate Grafana and CloudWatch for comprehensive monitoring of server health, application performance, and database metrics.
+
+Step 1: Setting up the VPC and Subnets
+1.1. Create a Custom VPC
+VPC Name: HighTrafficAppVPC
+CIDR Block: Use a range that allows for scalability, e.g., 10.0.0.0/16.
+1.2. Define Subnets for Frontend and Backend
+Frontend Subnets: Create 4 public subnets across two Availability Zones for redundancy, allowing for high availability.
+oSubnet 1 (Zone A): 10.0.1.0/24
+oSubnet 2 (Zone B): 10.0.2.0/24
+oSubnet 3 (Zone A): 10.0.3.0/24
+oSubnet 4 (Zone B): 10.0.4.0/24
+Backend Subnets: Create 4 private subnets across two Availability Zones for the backend.
+oSubnet 5 (Zone A): 10.0.5.0/24
+oSubnet 6 (Zone B): 10.0.6.0/24
+oSubnet 7 (Zone A): 10.0.7.0/24
+oSubnet 8 (Zone B): 10.0.8.0/24
+1.3. Route Tables and Internet Gateway
+Internet Gateway: Attach an Internet Gateway for frontend public subnets.
+Route Tables:
+oAssociate a route table with public subnets, allowing them to route through the Internet Gateway.
+oSet up a private route table for backend subnets without internet access.
+1.4. Security Groups
+Frontend Security Group:
+oAllow HTTP (80), HTTPS (443), and Nginx (default: 80).
+oRestrict SSH (22) access to trusted IPs.
+Backend Security Group:
+oOnly allow access from frontend subnets or specific security groups.
+Database Security Group:
+oAllow access only from backend instances to ensure security.
+
+Step 2: Provision EC2 Instances
+2.1. Frontend EC2 Instance (3 or 4 ARM CPUs)
+Instance Type: t4g.xlarge (ARM-based for cost efficiency).
+Operating System: Ubuntu 20.04 LTS or later.
+Storage: Consider SSD storage for better performance.
+Docker Installation: Install Docker and Docker Compose.
+2.2. Backend EC2 Instance (3 or 4 ARM CPUs)
+Similar to the frontend instance but will host backend services in Docker.
+2.3. Database Instance for MySQL 8
+Instance Type: db.r5.large or higher for optimized database performance.
+Storage: Use provisioned IOPS SSD for handling a high number of concurrent transactions.
+Database Configuration:
+oInstall MySQL 8.
+oSet up a private subnet and restrict access to backend security groups only.
+
+Step 3: Docker Setup for Frontend and Backend
+3.1. Frontend Container (Nginx Load Balancer)
+Nginx Configuration:
+oConfigure Nginx as a reverse proxy and load balancer.
+oDefine load-balancing rules in the nginx.conf to handle high traffic and route requests to the backend as needed.
+Frontend Application:
+oDeploy the frontend application (e.g., React/Angular) as a Docker container.
+oUse Docker Compose to define and launch Nginx and the frontend service.
+3.2. Backend Container
+Backend Application: Set up and deploy backend logic (e.g., Node.js, Express) in a Docker container.
+Docker Networking:
+oLink backend Docker containers to the MySQL container, using Docker Compose networks to facilitate private communication.
+3.3. Docker Compose Setup:
+Docker Compose File:
+oDefine both Nginx and backend services in the docker-compose.yml file.
+oConfigure health checks, scaling policies, and restart policies for resilience.
+
+Step 4: MySQL Database Setup and Configuration
+Installation:
+oInstall MySQL 8 on the database EC2 instance and configure it to accept connections only from backend EC2 instances.
+User and Database Creation:
+oSet up a database user with restricted privileges.
+Security Enhancements:
+oDisable remote root access and configure SSL/TLS connections if required.
+
+Step 5: Monitoring and Logging with Grafana and CloudWatch
+5.1. CloudWatch Setup:
+Enable Detailed Monitoring for all EC2 instances to track metrics like CPU, memory, and network usage.
+CloudWatch Logs:
+oSet up logs for Nginx, backend, and database, and configure log groups in CloudWatch.
+5.2. Grafana Integration:
+Install Grafana on a separate instance or Docker container.
+Data Source Configuration:
+oAdd AWS CloudWatch as a data source to pull in relevant metrics.
+Dashboards:
+oSet up Grafana dashboards to monitor frontend and backend request rates, database performance, and server health.
+
+Architecture Diagram
+The following is a high-level breakdown of the architecture.
+1.VPC: Encompasses all EC2 instances and subnets.
+2.Subnets:
+o4 Public Subnets for Frontend (Nginx load balancer and application).
+o4 Private Subnets for Backend (backend service and database).
+3.Frontend EC2 Instance:
+oHosts Docker with Nginx as a load balancer, serving frontend Docker containers.
+oAssociated with public subnets to handle incoming traffic.
+4.Backend EC2 Instance:
+oHosts Docker with backend service containers.
+oConnects only with the frontend instance and database.
+5.Database EC2 Instance:
+oRuns MySQL 8, accessible only from backend subnets.
+6.Monitoring:
+oGrafana and CloudWatch integrated for continuous monitoring and alerting.
+
+Additional Considerations
+Scaling: For handling a high user load, set up an Auto Scaling group for frontend and backend EC2 instances.
+Database Optimization: Regular backups and query optimizations.
+CI/CD Integration: Use a CI/CD pipeline (e.g., GitLab CI/CD, Jenkins) for automated deployments.
+This architecture will support high availability, scalability, and efficient monitoring for handling 1.5 lakh daily users. Let me know if you need further customization or a detailed diagram illustration!
+
+
+
+
